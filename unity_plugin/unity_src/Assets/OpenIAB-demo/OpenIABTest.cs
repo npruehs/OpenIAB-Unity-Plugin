@@ -75,6 +75,8 @@ public class OpenIABTest : MonoBehaviour
     int _column = 0;
     int _row = 0;
 
+    Inventory _inventory = null;
+
     private bool Button(string text)
     {
         float width = Screen.width / 2.0f - X_OFFSET * 2;
@@ -135,7 +137,8 @@ public class OpenIABTest : MonoBehaviour
 
         if (Button("Consume Product"))
         {
-            OpenIAB.consumeProduct(Purchase.CreateFromSku(SKU));
+            if (_inventory != null && _inventory.HasPurchase(SKU))
+                OpenIAB.consumeProduct(_inventory.GetPurchase(SKU));
         }
 
 // Android specific buttons
@@ -145,9 +148,10 @@ public class OpenIABTest : MonoBehaviour
             OpenIAB.purchaseProduct("android.test.purchased");
         }
 
-        if (Button("Test Refund"))
+        if (Button("Test Consume"))
         {
-            OpenIAB.purchaseProduct("android.test.refunded");
+            if (_inventory != null && _inventory.HasPurchase("android.test.purchased"))
+                OpenIAB.consumeProduct(_inventory.GetPurchase("android.test.purchased"));
         }
 
         if (Button("Test Item Unavailable"))
@@ -175,7 +179,10 @@ public class OpenIABTest : MonoBehaviour
     {
         Debug.Log("queryInventorySucceededEvent: " + inventory);
         if (inventory != null)
+        {
+            _inventory = inventory;
             _label = inventory.ToString();
+        }
     }
     private void queryInventoryFailedEvent(string error)
     {
@@ -186,6 +193,8 @@ public class OpenIABTest : MonoBehaviour
     {
         Debug.Log("purchaseSucceededEvent: " + purchase);
         _label = "PURCHASED:" + purchase.ToString();
+        if (_inventory != null)
+            _inventory.AddPurchase(purchase);
     }
     private void purchaseFailedEvent(int errorCode, string errorMessage)
     {
@@ -196,6 +205,8 @@ public class OpenIABTest : MonoBehaviour
     {
         Debug.Log("consumePurchaseSucceededEvent: " + purchase);
         _label = "CONSUMED: " + purchase.ToString();
+        if (_inventory != null)
+            _inventory.ErasePurchase(SKU);
     }
     private void consumePurchaseFailedEvent(string error)
     {
